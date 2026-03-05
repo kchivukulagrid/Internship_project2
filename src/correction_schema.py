@@ -7,6 +7,9 @@ from typing import Any
 VALID_LABELS = {"PER", "ORG", "LOC", "MISC"}
 
 
+# ---------------------------
+# Entity Normalization
+# ---------------------------
 def normalize_entities(value: Any) -> list[dict[str, str]]:
     """Normalize and validate entity list into canonical shape."""
     if not isinstance(value, list):
@@ -37,6 +40,9 @@ def normalize_entities(value: Any) -> list[dict[str, str]]:
     return normalized
 
 
+# ---------------------------
+# Payload Normalization
+# ---------------------------
 def normalize_payload(payload: Any) -> dict[str, list[dict[str, str]]]:
     """Normalize any payload to {'entities': [...]} shape."""
     if isinstance(payload, dict) and "entities" in payload:
@@ -44,6 +50,9 @@ def normalize_payload(payload: Any) -> dict[str, list[dict[str, str]]]:
     return {"entities": []}
 
 
+# ---------------------------
+# Payload Validation
+# ---------------------------
 def is_valid_payload(payload: Any) -> bool:
     """Return True only when payload is canonical and valid."""
     if not isinstance(payload, dict):

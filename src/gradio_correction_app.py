@@ -41,6 +41,9 @@ warnings.filterwarnings(
     category=FutureWarning,
 )
 
+# ---------------------------
+# Default Runtime Settings
+# ---------------------------
 DEFAULT_MODEL_NAME = "Qwen/Qwen2.5-1.5B"
 DEFAULT_ADAPTER_PATH = "experiments/with_defs_qwen2_5_1_5B"
 FALLBACK_ADAPTER_PATH = "experiments/qwen2_5_1_5B_masked_tuned"
@@ -57,6 +60,9 @@ LABEL_COLORS = {
     "MISC": "#a855f7",
 }
 
+# ---------------------------
+# UI Theme / Styles
+# ---------------------------
 APP_CSS = """
 .gradio-container {
   --bg: #070a14;
@@ -345,6 +351,9 @@ footer {
 """
 
 
+# ---------------------------
+# CLI and Environment Helpers
+# ---------------------------
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Launch Gradio correction interface.")
     parser.add_argument("--model_name", default=DEFAULT_MODEL_NAME)
@@ -377,6 +386,9 @@ def default_args() -> argparse.Namespace:
     )
 
 
+# ---------------------------
+# Model Runtime Helpers
+# ---------------------------
 def resolve_adapter(path: str) -> str | None:
     """
     Resolve adapter identifier.
@@ -424,6 +436,9 @@ def load_runtime(model_name: str, adapter_path: str | None):
     return model, tokenizer, device, applied_adapter
 
 
+# ---------------------------
+# Output Rendering Helpers
+# ---------------------------
 def build_highlight_html(text: str, entities: list[dict]) -> str:
     if not text:
         return "<div class='hl-wrap'>Enter text and run extraction.</div>"
@@ -489,6 +504,9 @@ def entity_stats_markdown(parsed: dict) -> str:
     )
 
 
+# ---------------------------
+# UI Callback Factories
+# ---------------------------
 def make_predict_fn(model, tokenizer, device, state: CorrectionState):
     def predict(text: str):
         text = (text or "").strip()
@@ -584,6 +602,9 @@ def make_save_fn(state: CorrectionState):
     return save
 
 
+# ---------------------------
+# Dashboard Overlay Helpers
+# ---------------------------
 def render_dashboard_iframe(dashboard_html_path: str) -> str:
     path = Path(dashboard_html_path)
     if not path.exists():
@@ -635,6 +656,9 @@ def render_dashboard_overlay(dashboard_html_path: str, visible: bool) -> str:
     """
 
 
+# ---------------------------
+# App Builder / Entrypoint
+# ---------------------------
 def build_demo(args: argparse.Namespace):
     """Build and return Gradio demo + runtime metadata."""
     adapter_path = resolve_adapter(args.adapter_path)

@@ -6,6 +6,9 @@ import re
 VALID_LABELS = {"PER", "ORG", "LOC", "MISC"}
 
 
+# ---------------------------
+# Normalization Helpers
+# ---------------------------
 def _normalize_entities(entities: list[dict]) -> list[dict]:
     normalized = []
     seen = set()
@@ -28,6 +31,9 @@ def _normalize_entities(entities: list[dict]) -> list[dict]:
     return normalized
 
 
+# ---------------------------
+# JSON Recovery Helpers
+# ---------------------------
 def _close_unbalanced_json(candidate: str) -> str:
     opens = []
     in_string = False
@@ -92,6 +98,9 @@ def _find_balanced_json(text: str):
     return None
 
 
+# ---------------------------
+# Schema Conversion Helpers
+# ---------------------------
 def _json_to_schema(obj):
     if isinstance(obj, dict):
         if isinstance(obj.get("entities"), list):
@@ -131,6 +140,9 @@ def _regex_recover_entities(text: str):
     return None
 
 
+# ---------------------------
+# Public Parsing API
+# ---------------------------
 def extract_json(text: str):
     """
     Extract and normalize model output to {"entities":[{"text","label"}]}.
@@ -161,6 +173,9 @@ def extract_json(text: str):
     return _regex_recover_entities(text)
 
 
+# ---------------------------
+# Set/Metric Helpers
+# ---------------------------
 def to_set(entities: list[dict]) -> set[tuple[str, str]]:
     return set(
         (e["text"], e["label"])
@@ -169,6 +184,9 @@ def to_set(entities: list[dict]) -> set[tuple[str, str]]:
     )
 
 
+# ---------------------------
+# Public Metric API
+# ---------------------------
 def compute_metrics(file_path: str) -> dict:
     """Compute precision/recall/F1 and JSON-validity metrics from prediction JSONL."""
     total_tp = 0

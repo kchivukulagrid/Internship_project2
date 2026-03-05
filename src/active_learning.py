@@ -9,6 +9,9 @@ from pathlib import Path
 from src.correction_io import append_jsonl, ensure_parent
 
 
+# ---------------------------
+# Scoring Helpers
+# ---------------------------
 def uncertainty_score(predicted: dict) -> float:
     """Simple heuristic: fewer entities => higher uncertainty."""
     entities = predicted.get("entities", []) if isinstance(predicted, dict) else []
@@ -22,6 +25,9 @@ def uncertainty_score(predicted: dict) -> float:
     return 0.15
 
 
+# ---------------------------
+# Record Builders
+# ---------------------------
 def build_cycle_record(text: str, predicted: dict, corrected: dict) -> dict:
     """Create a cycle-level record for active learning."""
     ts = datetime.now(timezone.utc).isoformat()
@@ -35,11 +41,15 @@ def build_cycle_record(text: str, predicted: dict, corrected: dict) -> dict:
     }
 
 
+# ---------------------------
+# Persistence Helpers
+# ---------------------------
 def append_cycle_record(path: str | Path, record: dict) -> None:
     append_jsonl(path, record)
 
 
 def write_cycle_metadata(path: str | Path, data: dict) -> None:
+    """Write cycle-level metadata as formatted JSON."""
     p = ensure_parent(path)
-    with p.open("w") as f:
+    with p.open("w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)

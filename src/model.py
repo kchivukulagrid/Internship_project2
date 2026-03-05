@@ -7,6 +7,9 @@ from peft import LoraConfig, get_peft_model
 from transformers import AutoModelForCausalLM
 
 
+# ---------------------------
+# Device Selection
+# ---------------------------
 def get_device() -> str:
     """Return the preferred available accelerator device."""
     if torch.backends.mps.is_available():
@@ -16,6 +19,9 @@ def get_device() -> str:
     return "cpu"
 
 
+# ---------------------------
+# Model + LoRA Loader
+# ---------------------------
 def load_model(model_name: str):
     """Load base model and apply project LoRA configuration."""
     device = get_device()

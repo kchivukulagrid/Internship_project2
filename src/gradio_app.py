@@ -24,6 +24,9 @@ DEFAULT_PREDICTION_EXPORT = "data/active_learning/predictions_export.jsonl"
 DEFAULT_CORRECTION_EXPORT = "data/active_learning/corrections.jsonl"
 
 
+# ---------------------------
+# CLI + Path Helpers
+# ---------------------------
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Gradio correction interface for NER JSON extraction.")
     parser.add_argument("--model_name", default=DEFAULT_MODEL_NAME)
@@ -45,6 +48,9 @@ def resolve_adapter_path(path: str) -> str:
     )
 
 
+# ---------------------------
+# Parsing + IO Helpers
+# ---------------------------
 def normalize_prediction(text: str) -> dict:
     parsed = extract_json(text)
     if parsed is None:
@@ -58,6 +64,9 @@ def append_jsonl(path: str, row: dict) -> None:
         f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
+# ---------------------------
+# Runtime Builders
+# ---------------------------
 def build_runtime(model_name: str, adapter_path: str):
     device = get_device()
     tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -70,6 +79,9 @@ def build_runtime(model_name: str, adapter_path: str):
     return model, tokenizer, device
 
 
+# ---------------------------
+# UI Callback Factories
+# ---------------------------
 def make_predict_fn(model, tokenizer, device, prediction_export: str):
     def predict(text: str):
         text = (text or "").strip()
@@ -144,6 +156,9 @@ def make_save_fn(correction_export: str):
     return save_correction
 
 
+# ---------------------------
+# Main Entrypoint
+# ---------------------------
 def main() -> None:
     args = parse_args()
     adapter_path = resolve_adapter_path(args.adapter_path)

@@ -41,8 +41,10 @@ def main() -> None:
     results = compute_metrics(args.input_file)
     _print_results(results)
 
-    os.makedirs(os.path.dirname(args.output_file), exist_ok=True)
-    with open(args.output_file, "w") as f:
+    output_dir = os.path.dirname(args.output_file)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+    with open(args.output_file, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=4)
 
 
