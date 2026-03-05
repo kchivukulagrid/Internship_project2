@@ -1,0 +1,3 @@
+run_name,source,precision,recall,f1,validity,valid_json_count,total_examples,repaired_json_count,model_dir,metrics_file,predictions_file
+baseline_json_no_0p2_test,baseline,0.9184856094263086,0.8515401146131805,0.8837468636743796,1.0,3453,3453,7,experiments/qwen2_5_1_5B_masked_tuned,experiments/qwen2_5_1_5B_masked_tuned/final_test_no_0p2_metrics.json,data/processed/exports/final_test_no_0p2.jsonl
+data_prep_with_defs_test,data_prep,0.9062444086598676,0.9070558739255015,0.9066499597243355,1.0,3453,3453,0,experiments/with_defs_qwen2_5_1_5B,experiments/data_prep_comparison/dp_wdefs_test_metrics.json,data/processed/exports/dp_wdefs_test_pred.jsonl

@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environment
+venv/
+.venv/
+
+# Local app/runtime artifacts
+.gradio/
+.hf_cache/
+.hf_datasets_cache/
+.hf_home/
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
+
+# Logs/temp
+*.log
+*.tmp

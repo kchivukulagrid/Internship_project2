@@ -1,0 +1,13 @@
+# Core app
+gradio==6.6.0
+
+# Model + inference
+torch>=2.2.0
+transformers>=4.40.0
+peft>=0.10.0
+accelerate>=0.30.0
+safetensors>=0.4.0
+sentencepiece>=0.1.99
+
+# Data + utilities
+datasets>=2.18.0

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700">
+<rect width="100%" height="100%" fill="#f8fafc"/>
+<text x="600.0" y="42" text-anchor="middle" font-size="30" font-family="Arial" fill="#0f172a" font-weight="700">Validation: Data Prep Variant Comparison</text>
+<text x="600.0" y="68" text-anchor="middle" font-size="16" font-family="Arial" fill="#475569">F1 Score</text>
+<line x1="260" y1="188.3" x2="1160" y2="188.3" stroke="#e2e8f0"/>
+<text x="248" y="193.3" text-anchor="end" font-size="14" fill="#0f172a">with_defs</text>
+<circle cx="1101.0" cy="188.3" r="9" fill="#8b5cf6"/>
+<text x="1115.0" y="193.3" font-size="12" fill="#0f172a" font-weight="700">0.9344</text>
+<line x1="260" y1="365.0" x2="1160" y2="365.0" stroke="#e2e8f0"/>
+<text x="248" y="370.0" text-anchor="end" font-size="14" fill="#0f172a">no_defs</text>
+<circle cx="1056.2" cy="365.0" r="9" fill="#8b5cf6"/>
+<text x="1070.2" y="370.0" font-size="12" fill="#0f172a" font-weight="700">0.8846</text>
+<line x1="260" y1="541.7" x2="1160" y2="541.7" stroke="#e2e8f0"/>
+<text x="248" y="546.7" text-anchor="end" font-size="14" fill="#0f172a">syn_aug</text>
+<circle cx="1095.0" cy="541.7" r="9" fill="#8b5cf6"/>
+<text x="1109.0" y="546.7" font-size="12" fill="#0f172a" font-weight="700">0.9277</text>
+</svg>

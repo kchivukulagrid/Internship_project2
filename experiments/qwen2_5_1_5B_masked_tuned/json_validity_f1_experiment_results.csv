@@ -1,0 +1,7 @@
+run_name,json_validate,temperature,do_sample,f1,validity,valid_json_count,total_examples,repaired_json_count,metrics_file,predictions_file
+json_yes_temp_0p0,yes,0.0,false,0.904834,1.000000,3250,3250,0,experiments/qwen2_5_1_5B_masked_tuned/json_yes_temp_0p0_metrics.json,data/processed/exports/json_yes_temp_0p0_predictions.jsonl
+json_yes_temp_0p1,yes,0.1,true,0.906141,1.000000,3250,3250,0,experiments/qwen2_5_1_5B_masked_tuned/json_yes_temp_0p1_metrics.json,data/processed/exports/json_yes_temp_0p1_predictions.jsonl
+json_yes_temp_0p2,yes,0.2,true,0.903600,1.000000,3250,3250,0,experiments/qwen2_5_1_5B_masked_tuned/json_yes_temp_0p2_metrics.json,data/processed/exports/json_yes_temp_0p2_predictions.jsonl
+json_no_temp_0p0,no,0.0,false,0.904834,1.000000,3250,3250,7,experiments/qwen2_5_1_5B_masked_tuned/json_no_temp_0p0_metrics.json,data/processed/exports/json_no_temp_0p0_predictions.jsonl
+json_no_temp_0p1,no,0.1,true,0.905314,1.000000,3250,3250,9,experiments/qwen2_5_1_5B_masked_tuned/json_no_temp_0p1_metrics.json,data/processed/exports/json_no_temp_0p1_predictions.jsonl
+json_no_temp_0p2,no,0.2,true,0.906400,1.000000,3250,3250,11,experiments/qwen2_5_1_5B_masked_tuned/json_no_temp_0p2_metrics.json,data/processed/exports/json_no_temp_0p2_predictions.jsonl

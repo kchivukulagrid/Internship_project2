@@ -1,0 +1,3 @@
+mode,run_name,json_validate,temperature,output_format,f1,validity,valid_json_count,total_examples,repaired_json_count,metrics_file,predictions_file
+free,gen_mode_free_yes_0p0_json,yes,0.0,json,0.904834,1.000000,3250,3250,0,experiments/qwen2_5_1_5B_masked_tuned/gen_mode_free_yes_0p0_json_metrics.json,data/processed/exports/gen_mode_free_yes_0p0_json.jsonl
+constrained,gen_mode_constrained_yes_0p0_json,yes,0.0,json,0.937219,1.000000,3250,3250,0,experiments/qwen2_5_1_5B_masked_tuned/gen_mode_constrained_yes_0p0_json_metrics.json,data/processed/exports/gen_mode_constrained_yes_0p0_json.jsonl

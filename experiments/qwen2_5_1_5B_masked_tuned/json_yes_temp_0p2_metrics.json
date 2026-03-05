@@ -1,0 +1,9 @@
+{
+    "precision": 0.9484246061515379,
+    "recall": 0.8628220440197918,
+    "f1": 0.9036004645760742,
+    "validity": 1.0,
+    "total_examples": 3250,
+    "valid_json_count": 3250,
+    "repaired_json_count": 0
+}

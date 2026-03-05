@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700">
+<rect width="100%" height="100%" fill="#f8fafc"/>
+<text x="600.0" y="42" text-anchor="middle" font-size="30" font-family="Arial" fill="#0f172a" font-weight="700">Test: Final Configuration Comparison</text>
+<text x="600.0" y="68" text-anchor="middle" font-size="16" font-family="Arial" fill="#475569">F1 and Validity on Test Split</text>
+<rect x="100" y="100" width="1040" height="430" fill="#ffffff" stroke="#e2e8f0" rx="10"/>
+<line x1="100" y1="530" x2="1140" y2="530" stroke="#334155" stroke-width="1.5"/>
+<line x1="100" y1="100" x2="100" y2="530" stroke="#334155" stroke-width="1.5"/>
+<line x1="100" y1="530.0" x2="1140" y2="530.0" stroke="#e2e8f0"/>
+<text x="90" y="534.0" text-anchor="end" font-size="12" fill="#334155">0.00</text>
+<line x1="100" y1="444.0" x2="1140" y2="444.0" stroke="#e2e8f0"/>
+<text x="90" y="448.0" text-anchor="end" font-size="12" fill="#334155">0.20</text>
+<line x1="100" y1="358.0" x2="1140" y2="358.0" stroke="#e2e8f0"/>
+<text x="90" y="362.0" text-anchor="end" font-size="12" fill="#334155">0.40</text>
+<line x1="100" y1="272.0" x2="1140" y2="272.0" stroke="#e2e8f0"/>
+<text x="90" y="276.0" text-anchor="end" font-size="12" fill="#334155">0.60</text>
+<line x1="100" y1="186.0" x2="1140" y2="186.0" stroke="#e2e8f0"/>
+<text x="90" y="190.0" text-anchor="end" font-size="12" fill="#334155">0.80</text>
+<line x1="100" y1="100.0" x2="1140" y2="100.0" stroke="#e2e8f0"/>
+<text x="90" y="104.0" text-anchor="end" font-size="12" fill="#334155">1.00</text>
+<rect x="240.6" y="150.5" width="114.4" height="379.5" rx="6" fill="#ef4444"/>
+<rect x="365.0" y="100.0" width="114.4" height="430.0" rx="6" fill="#0ea5e9"/>
+<text x="360.0" y="554.0" text-anchor="middle" font-size="12" fill="#334155">yes 0p1</text>
+<text x="360.0" y="90.0" text-anchor="middle" font-size="12" fill="#0f172a" font-weight="700">F1 0.8825</text>
+<rect x="760.6" y="150.0" width="114.4" height="380.0" rx="6" fill="#ef4444"/>
+<rect x="885.0" y="100.0" width="114.4" height="430.0" rx="6" fill="#0ea5e9"/>
+<text x="880.0" y="554.0" text-anchor="middle" font-size="12" fill="#334155">no 0p2</text>
+<text x="880.0" y="90.0" text-anchor="middle" font-size="12" fill="#0f172a" font-weight="700">F1 0.8837</text>
+<rect x="940" y="98" width="16" height="16" fill="#ef4444" rx="3"/>
+<text x="964" y="111" font-size="13" fill="#334155">F1</text>
+<rect x="1020" y="98" width="16" height="16" fill="#0ea5e9" rx="3"/>
+<text x="1044" y="111" font-size="13" fill="#334155">Validity</text>
+</svg>

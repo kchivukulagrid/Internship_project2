@@ -1,0 +1,4 @@
+variant,prompt_style,synonym_aug,f1,validity,valid_json_count,total_examples,repaired_json_count,model_dir,metrics_file,predictions_file
+with_defs,with_defs,no,0.934435,1.000000,3250,3250,0,experiments/with_defs_qwen2_5_1_5B,experiments/data_prep_comparison/with_defs_val_metrics.json,data/processed/exports/with_defs_val_predictions.jsonl
+no_defs,no_defs,no,0.884637,1.000000,3250,3250,0,experiments/no_defs_qwen2_5_1_5B,experiments/data_prep_comparison/no_defs_val_metrics.json,data/processed/exports/no_defs_val_predictions.jsonl
+syn_aug,with_defs,yes,0.927732,1.000000,3250,3250,0,experiments/syn_aug_qwen2_5_1_5B,experiments/data_prep_comparison/syn_aug_val_metrics.json,data/processed/exports/syn_aug_val_predictions.jsonl

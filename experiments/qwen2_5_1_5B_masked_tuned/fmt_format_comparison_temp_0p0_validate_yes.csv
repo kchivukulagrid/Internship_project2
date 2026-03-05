@@ -1,0 +1,4 @@
+format,run_name,json_validate,temperature,f1,validity,valid_json_count,total_examples,repaired_json_count,metrics_file,predictions_file
+json,fmt_j_yes_0p0,yes,0.0,0.904834,1.000000,3250,3250,0,experiments/qwen2_5_1_5B_masked_tuned/fmt_j_yes_0p0_metrics.json,data/processed/exports/fmt_j_yes_0p0.jsonl
+xml,fmt_x_yes_0p0,yes,0.0,0.803668,1.000000,3250,3250,0,experiments/qwen2_5_1_5B_masked_tuned/fmt_x_yes_0p0_metrics.json,data/processed/exports/fmt_x_yes_0p0.jsonl
+plain,fmt_p_yes_0p0,yes,0.0,0.659040,1.000000,3250,3250,0,experiments/qwen2_5_1_5B_masked_tuned/fmt_p_yes_0p0_metrics.json,data/processed/exports/fmt_p_yes_0p0.jsonl
