@@ -197,12 +197,63 @@ python -m src.evaluation \
 
 ## 🧪 Experiment Commands
 
+### 1. Parameters Experiment (JSON Validate + Temperature)
+Purpose: compare `json_validate` (`yes/no`) across temperatures `0.0`, `0.1`, `0.2`.
+
 ```bash
 bash scripts/run_json_validity_f1_experiments.sh
-bash scripts/run_format_comparison_and_csv.sh --temperature 0.0 --json_validate yes
-bash scripts/run_generation_mode_comparison_and_csv.sh --temperature 0.0 --json_validate yes --output_format json
-bash scripts/run_data_prep_comparison_and_csv.sh --epochs 2 --generation_mode constrained --temperature 0.0 --json_validate yes
 ```
+
+Primary output:
+- `experiments/qwen2_5_1_5B_masked_tuned/json_validity_f1_experiment_results.csv`
+
+### 2. Architecture Experiment: Output Format (JSON vs XML vs plain)
+Purpose: compare output format behavior under one fixed decoding setup.
+Recommended fixed setup: `--temperature 0.0 --json_validate yes`
+
+```bash
+bash scripts/run_format_comparison_and_csv.sh \
+  --temperature 0.0 \
+  --json_validate yes
+```
+
+Primary output:
+- `experiments/qwen2_5_1_5B_masked_tuned/fmt_format_comparison_temp_0p0_validate_yes.csv`
+
+### 3. Architecture Experiment: Generation Mode (Constrained vs Free)
+Purpose: compare decoding strategy while keeping format/config fixed.
+Recommended fixed setup: `--temperature 0.0 --json_validate yes --output_format json`
+
+```bash
+bash scripts/run_generation_mode_comparison_and_csv.sh \
+  --temperature 0.0 \
+  --json_validate yes \
+  --output_format json
+```
+
+Primary output:
+- `experiments/qwen2_5_1_5B_masked_tuned/gen_mode_comparison_temp_0p0_validate_yes_format_json.csv`
+
+### 4. Data Prep Experiment (with_defs vs no_defs vs syn_aug)
+Purpose: compare prompt/data variants after short retraining + evaluation.
+
+```bash
+bash scripts/run_data_prep_comparison_and_csv.sh \
+  --epochs 2 \
+  --generation_mode constrained \
+  --temperature 0.0 \
+  --json_validate yes
+```
+
+Primary outputs:
+- `experiments/data_prep_comparison/data_prep_comparison_temp_0p0_mode_constrained.csv`
+- `experiments/data_prep_comparison/data_prep_test_compare.csv`
+
+### Suggested Order (for reproducible reporting)
+1. `run_json_validity_f1_experiments.sh`
+2. `run_format_comparison_and_csv.sh`
+3. `run_generation_mode_comparison_and_csv.sh`
+4. `run_data_prep_comparison_and_csv.sh`
 
 ---
 
