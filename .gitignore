@@ -24,3 +24,10 @@ venv/
 # Logs/temp
 *.log
 *.tmp
+
+# local llama.cpp clone
+llama.cpp/
+
+# Exclude >2GB artifacts (GitHub LFS limit)
+models/gguf/qwen2.5-1.5b-lora-f16.gguf
+models/hf/qwen2.5-1.5b-lora-merged/model.safetensors

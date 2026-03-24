@@ -11,3 +11,6 @@ sentencepiece>=0.1.99
 
 # Data + utilities
 datasets>=2.18.0
+
+# Constrained decoding
+outlines>=0.0.46

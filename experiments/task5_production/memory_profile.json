@@ -1,0 +1,5 @@
+{
+  "model_name": "Qwen/Qwen2.5-1.5B",
+  "total_examples": 50,
+  "param_bytes": 3087428608
+}

@@ -1,0 +1,6 @@
+entity_type,critical_layers
+ALL,layer_11;layer_12;layer_20;layer_6;layer_22
+ORG,layer_12;layer_3;layer_4;layer_6;layer_11
+LOC,layer_11;layer_8;layer_16;layer_18;layer_20
+MISC,layer_20;layer_1;layer_25;layer_4;layer_6
+PER,layer_11;layer_12;layer_16;layer_17;layer_9
