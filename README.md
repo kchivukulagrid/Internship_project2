@@ -48,7 +48,7 @@ Target quality achieved:
 ## 🏗️ Installation & Setup
 
 ### Prerequisites
-- Python 3.10+
+- Python `3.10-3.12` (recommended: `3.11`)
 - macOS/Linux (MPS/CUDA/CPU supported via PyTorch setup)
 - Git LFS (required to pull tracked model artifacts under `models/`)
 
@@ -86,12 +86,15 @@ cd NER_to_JSON_Project2
 
 ### 2. Create environment and install dependencies
 ```bash
-python3 -m venv venv
+python3.11 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 git lfs install
 git lfs pull
 ```
+
+If `outlines_core` fails to build (usually on Python `3.13+`/`3.14`), use Python `3.11` for this project.  
+Alternative (if you must keep Python `3.14`): install Rust first, then reinstall deps.
 
 ### 3. Run UI directly (no retraining required)
 ```bash
