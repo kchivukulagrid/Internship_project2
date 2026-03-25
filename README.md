@@ -399,6 +399,15 @@ Source files:
 `llama.cpp` is used in Task 5 to convert/quantize GGUF models and run low-level quantized inference benchmarks.
 
 ### Install/build `llama.cpp` (for new users)
+If `cmake` is missing (`command not found: cmake`), install it first:
+```bash
+# macOS (Homebrew)
+brew install cmake
+cmake --version
+```
+
+For Linux, install `cmake` from your package manager before building.
+
 ```bash
 git clone https://github.com/ggerganov/llama.cpp.git
 cd llama.cpp
