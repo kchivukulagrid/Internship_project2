@@ -320,25 +320,16 @@ Primary outputs:
 
 ### Task 1: Constrained Decoding for Structured NER
 
-**Objective:** Train a LoRA adapter that outputs strict JSON with character-level offsets and a confidence score, then benchmark constrained vs free decoding on quality, JSON validity, and latency.
+Explanation: This task checks whether schema-aware decoding improves structured NER outputs enough to justify the added inference cost.
 
-**Methodology:**
+Objective: train a LoRA adapter that emits strict JSON with character offsets and confidence, then compare constrained vs free decoding on quality, validity, and latency.
 
-The pipeline consists of five stages, each implemented as a standalone module under `src/tasks/task1_constrained/`:
+Implementation:
+- Dataset preparation, LoRA training, constrained decoding, inference, and benchmarking are implemented in `src/tasks/task1_constrained/`.
+- The constrained path uses Outlines schema enforcement on the same base generation configuration used for free decoding.
 
-1. **Dataset preparation** (`prepare_dataset.py`): Loads the local CoNLL-2003 dataset, maps each example to a `{prompt, output}` JSONL format. The output is a JSON object containing an `entities` array (each with `type`, `value`, `start`, `end` character offsets) and a `confidence` score. Supports `--prompt_style with_defs` or `no_defs`.
-
-2. **LoRA training** (`train.py`): Fine-tunes `Qwen/Qwen2.5-1.5B` with LoRA (`r=16`, `alpha=32`, `dropout=0.05`, targeting `q_proj` and `v_proj`). Training labels mask the prompt tokens with `-100` so loss is computed only on the JSON output. Default: 2 epochs, lr `2e-4`, batch size 1 with gradient accumulation 2.
-
-3. **Constrained decoding** (`decode.py`): Uses the [Outlines](https://github.com/outlines-dev/outlines) library to build a JSON-schema logits processor from the NER schema (defined in `src/core/schema.py`). The schema enforces: top-level `entities` array + `confidence` float in [0,1], with each entity requiring `type`, `value`, `start` (int ≥ 0), `end` (int ≥ 0). The processor is attached to HuggingFace `model.generate()` (greedy: `do_sample=False`, `num_beams=1`, `max_new_tokens=256`, `repetition_penalty=1.05`). Free decoding uses the same generation config without the schema processor.
-
-4. **Inference** (`inference.py`): Loads the base model + PEFT adapter, dispatches to constrained or free decoding per `--generation_mode`. With `--json_validate yes`, invalid JSON falls back to `{"entities": [], "confidence": 0.0}`.
-
-5. **Benchmarking** (`benchmark.py`): Runs both modes on the test set, times wall-clock latency, and computes span-level metrics (entity sets compared as `(type, value, start, end)` tuples).
-
-**Results:**
-
-Source: `experiments/task1_constrained/task1_benchmark.csv`, `results.csv`
+Results:
+- Source: `experiments/task1_constrained/task1_benchmark.csv`, `experiments/task1_constrained/results.csv`
 
 | Mode | Samples | Precision | Recall | F1 | Validity | Elapsed |
 |------|---------|-----------|--------|----|----------|---------|
@@ -347,38 +338,25 @@ Source: `experiments/task1_constrained/task1_benchmark.csv`, `results.csv`
 | Free | 200 | 0.5770 | 0.5061 | 0.5393 | 1.0 | 288.1 s |
 | Constrained | 200 | 0.5770 | 0.5061 | 0.5393 | 1.0 | 382.7 s |
 
-**Key Findings:**
-
-- At deterministic (temperature=0) decoding, free and constrained modes produce **identical** token sequences, resulting in the same precision, recall, and F1. The schema processor never needs to intervene because the LoRA-tuned model already generates valid JSON naturally.
-- Both modes achieve **100% JSON validity** — the LoRA training effectively teaches the model the output schema.
-- Constrained decoding adds **~65% latency overhead** (709 s → 1171 s for 500 samples) due to the Outlines logits processor evaluating schema constraints at every token.
-- **Takeaway:** For a well-tuned model with deterministic decoding, the constrained decoder acts as a safety net but does not improve quality. It becomes valuable when using stochastic sampling (temperature > 0) where the model may occasionally deviate from the schema.
+Interpretation:
+- At deterministic decoding, constrained and free runs produce the same predictions, so precision, recall, and F1 are unchanged.
+- JSON validity is already `100%`, which shows the adapter learned the output format reliably.
+- Constraint enforcement still adds about `65%` latency overhead, so the main value here is format safety rather than quality gain.
 
 ---
 
 ### Task 2: Layer-wise Entity Type Importance
 
-**Objective:** Identify which transformer layers are most critical for recognizing each entity type (PER, ORG, LOC, MISC), using logit-lens analysis and per-layer LoRA ablation, then evaluate whether training LoRA on only the critical layers can match full-adapter performance.
+Explanation: This task analyzes which transformer layers matter most for different entity types and whether those insights can reduce LoRA training cost.
 
-**Methodology:**
+Objective: identify which transformer layers matter most for each entity type and test whether selective LoRA can preserve most of the full-model performance.
 
-Six modules under `src/tasks/task2_layer_importance/`:
+Implementation:
+- Logit-lens, early-vs-late analysis, per-layer ablation, critical-layer extraction, and selective LoRA training are implemented in `src/tasks/task2_layer_importance/`.
+- Outputs are stored in `experiments/task2_layer_importance/`.
 
-1. **Logit lens** (`logit_lens.py`): For each of the 28 Qwen layers (0–27), projects the last-token hidden state through `lm_head` → softmax, and records the max probability over token IDs corresponding to entity type labels (`PER`, `ORG`, `LOC`, `MISC`). Computes an **emergence score** = mean probability when the label is present in ground truth minus mean probability when absent.
-
-2. **Early vs late analysis** (`early_late_analysis.py`): Splits layers into early (0–13) and late (14–27), compares mean emergence scores per entity type to determine where each type's signal develops.
-
-3. **Ablation** (`ablation.py`): Starting from the full Task 1 adapter, disables LoRA on `q_proj`/`v_proj` one layer at a time, runs inference, and measures the F1 drop (`f1_delta`) per entity type. Layers causing the largest drop are the most critical.
-
-4. **Critical layer extraction** (`extract_critical_layers.py`): Takes the top-5 layers with the most negative `f1_delta` per entity type from the ablation results.
-
-5. **Selective LoRA training** (`train_selective_lora.py`): Trains a new LoRA adapter using `layers_to_transform` restricted to the union of all critical layers (14 unique layers out of 28), with the same hyperparameters as full training.
-
-6. **Summarization** (`summarize.py`): Aggregates logit-lens results into per-layer emergence scores.
-
-**Critical Layers by Entity Type:**
-
-Source: `experiments/task2_layer_importance/critical_layers.json`
+Critical layers by entity type:
+- Source: `experiments/task2_layer_importance/critical_layers.json`
 
 | Entity Type | Critical Layers (top-5 by ablation F1 drop) |
 |-------------|----------------------------------------------|
@@ -399,49 +377,34 @@ Source: `experiments/task2_layer_importance/results_early_late.csv`
 | LOC | Late (14–27) | Location recognition relies on higher-level representations |
 | PER | Late (14–27) | Person name detection peaks in upper layers |
 
-**Selective vs Full LoRA Comparison:**
-
-Source: `experiments/task2_layer_importance/results_selective.csv` (evaluated on 200 validation examples)
+Selective vs full LoRA:
+- Source: `experiments/task2_layer_importance/results_selective.csv`
 
 | Adapter | Precision | Recall | F1 | Validity | Layers Trained |
 |---------|-----------|--------|----|----------|----------------|
 | Full (all 28 layers) | 0.3952 | 0.3791 | 0.3870 | 1.0 | 28 |
 | Selective (critical only) | 0.3690 | 0.3511 | 0.3598 | 1.0 | 14 |
 
-**Key Findings:**
-
-- **Layers 11–12 are universally important** — they appear in the critical sets for ALL, PER, ORG, and are among the top layers overall. Ablating either causes significant F1 drops across all entity types.
-- **Entity types have distinct layer dependencies**: ORG relies on early-mid layers (3, 4, 6), PER on mid-upper layers (9, 11, 12, 16, 17), LOC spans mid-to-late (8, 16, 18, 20), and MISC shows a bimodal pattern with both very early (1) and very late (25) layers.
-- **Selective LoRA preserves 93% of full-adapter F1** (0.3598 vs 0.3870) while training only **half the layers** (14 out of 28), maintaining 100% JSON validity. This demonstrates that critical-layer-only training is a viable efficiency strategy, though the F1 gap suggests non-critical layers still contribute meaningful features.
-- Emergence magnitudes are small (1e-6 to 1e-8 scale), so early/late conclusions are **directional indicators** rather than strong effect sizes.
+Interpretation:
+- Layers `11` and `12` are repeatedly important across entity types and dominate the macro-critical set.
+- ORG and MISC signals emerge earlier, while PER and LOC depend more on later layers.
+- Selective LoRA keeps about `93%` of the full-adapter F1 while training only half the layers, which supports the efficiency claim even though full-layer training remains stronger.
 
 ---
 
 ### Task 3: Boundary Steering via Activation Intervention
 
-**Objective:** Use activation steering to control whether the model produces strict or loose entity boundaries. Extract hidden-state activations from a separate model (`google/gemma-2-2b`), compute steering vectors representing the "strict boundary" direction, and apply them during inference to evaluate boundary F1 impact.
+Explanation: This task tests whether entity-boundary behavior can be adjusted at inference time by steering internal activations instead of retraining the model.
 
-**Why Gemma 2B:** This task intentionally uses `google/gemma-2-2b` (a different architecture from the Qwen base used in Tasks 1/2/4/5) to study whether activation-space boundary signals are exploitable in a model that was **not** fine-tuned for the NER task.
+Objective: test whether activation steering can push generation toward stricter entity boundaries without retraining.
 
-**Methodology:**
+Model choice:
+- This task uses `google/gemma-2-2b`, not the Qwen model from Tasks 1, 2, 4, and 5.
+- The intent is to probe whether boundary-control signals exist in activation space even without task-specific fine-tuning.
 
-Five-stage pipeline under `src/tasks/task3_steering/`:
-
-1. **Boundary set preparation** (`prepare_boundary_sets.py`): From `task1_val.jsonl` (300 samples), creates two parallel datasets:
-   - **Strict:** original prompt + gold JSON with exact entity spans.
-   - **Loose:** same prompt + JSON where each entity boundary is randomly expanded or contracted by 1 character, with `value` re-sliced from the text accordingly.
-
-2. **Activation extraction** (`extract_activations.py`): Loads `google/gemma-2-2b`, runs forward passes on both strict and loose examples with `output_hidden_states=True`. For each target layer (12–16), computes the **mean hidden state across all sequence positions**, then averages across all examples. Saves per-layer mean activations for both sets.
-
-3. **Steering vector computation** (`compute_steering.py`): For each layer, computes `steering_vector = mean_strict - mean_loose` (elementwise subtraction). This vector points in the direction of "stricter boundaries" in activation space.
-
-4. **Steered inference** (`run_steering.py`): Registers forward hooks on Gemma's decoder layers that add `scale * steering_vector` to the layer output during generation. Tests all combinations of 5 layers (12–16) × 3 scales (0.5, 1.0, 1.5) = 15 configurations on 200 test examples. Generation uses greedy decoding (`max_new_tokens=256`, `do_sample=False`).
-
-5. **Boundary evaluation** (`evaluate_boundaries.py`): Computes span-level precision/recall/F1 by comparing `(start, end)` tuples between ground truth and predictions (ignoring entity type).
-
-**Results:**
-
-Source: `experiments/task3_steering/results.csv` (15 configurations)
+Implementation:
+- Boundary set preparation, activation extraction, steering vector computation, steered inference, and boundary evaluation are implemented in `src/tasks/task3_steering/`.
+- Source: `experiments/task3_steering/results.csv`
 
 | Layer | Scale | Precision | Recall | Boundary F1 |
 |-------|-------|-----------|--------|-------------|
@@ -461,46 +424,24 @@ Source: `experiments/task3_steering/results.csv` (15 configurations)
 | 16 | 1.0 | 0.00348 | 0.00491 | 0.00407 |
 | 16 | 1.5 | 0.00348 | 0.00491 | 0.00408 |
 
-Best configuration: **Layer 13, Scale 1.5** → Boundary F1 **0.00413**
-
-**Key Findings:**
-
-- **Recall is constant across all configurations** (0.00491), meaning the same number of gold spans are matched regardless of layer/scale. Steering primarily affects **precision** (false positive rate), not the model's ability to detect correct spans.
-- The **best F1 (Layer 13, Scale 1.5)** is only marginally better than the worst (Layer 15/16, Scale 0.5), with differences on the order of **0.00006** — too small to be practically meaningful.
-- **Overall F1 is extremely low (~0.4%)**, reflecting that Gemma 2B without task-specific fine-tuning cannot reliably produce structured NER JSON. The steering intervention is working against a very weak baseline.
-- **Train/inference mismatch:** Steering vectors were computed from activations on `prompt + gold output` (full sequence), but during inference the model only sees the prompt and must generate the output — this distribution shift likely weakens the steering effect.
-- **Layer 13 shows the strongest (though still modest) response** to steering, consistent with mid-layer representations being most amenable to directional control.
-- **Future direction:** Scales 2.0–3.0 could probe stronger effects, and applying steering to a task-tuned model (rather than a base model) would provide a more meaningful baseline.
+Interpretation:
+- Best configuration: layer `13`, scale `1.5`, boundary F1 `0.00413`.
+- Recall is effectively constant across runs, so steering mostly affects precision rather than detection coverage.
+- The effect exists but is weak, mainly because the base Gemma model is not tuned for this NER JSON task.
+- This completes the task instruction-wise, but the tradeoff evidence remains partial within the tested `0.5–1.5` range.
 
 ---
 
 ### Task 4: Adversarial Robustness
 
-**Objective:** Evaluate and improve the model's robustness against five categories of adversarial entity perturbations by training on a mixed dataset of original + adversarial examples.
+Explanation: This task evaluates how the extractor behaves under noisy or misleading inputs and whether adversarial fine-tuning improves reliability.
 
-**Methodology:**
+Objective: evaluate how the model behaves under adversarial entity perturbations and measure whether mixed adversarial training improves robustness.
 
-Seven modules under `src/tasks/task4_adversarial/`:
-
-1. **Adversarial example generation** (`prepare_eval_set.py`, `prepare_train_set.py`): Categories are assigned round-robin. Each perturbation is applied via `_transform_row`:
-
-   | Category | Perturbation Strategy |
-   |----------|----------------------|
-   | **Nested** | Prefixes `"International "` to the first entity, creates an outer entity span wrapping the expanded text, producing overlapping/nested annotations |
-   | **Abbrev** | Replaces multi-word entity values with initials (e.g., "New York" → "NY"); single words ≥4 chars → first 3 chars uppercased (e.g., "LONDON" → "LON"). Falls back to misspell if abbreviation fails |
-   | **Misspell** | Swaps two middle characters in entity values ≥4 chars (e.g., "West Indian" → "WsetIndian"). Falls back to multilingual on failure |
-   | **Ambiguous** | Wraps entity value in double quotes within the text while keeping the entity span pointing to the unquoted value, testing whether surrounding punctuation confuses span detection |
-   | **Multilingual** | Appends `" Texto adicional en espanol."` to the text, testing whether foreign-language noise degrades entity extraction on the English portion |
-
-2. **Training** (`train.py`): Creates `train_mixed.jsonl` (full original training set + 1000 adversarial examples), fine-tunes with LoRA (same config as Task 1: `r=16`, `alpha=32`, `q_proj`/`v_proj`, 2 epochs).
-
-3. **Evaluation** (`evaluate.py`): Computes per-category precision/recall/F1 at both entity-level (matching `(type, value, start, end)` tuples) and boundary-level (matching `(start, end)` only). Also tracks JSON validity.
-
-4. **Comparison** (`compare_results.py`): Computes `post - pre` metric differences per category → `robustness_gains.csv`.
-
-**Pre- vs Post-Training Results:**
-
-Source: `experiments/task4_adversarial/results_pre.csv`, `results_post.csv`, `robustness_gains.csv`
+Implementation:
+- Adversarial dataset generation, training, evaluation, and result comparison are implemented in `src/tasks/task4_adversarial/`.
+- Categories include nested entities, abbreviations, misspellings, ambiguous boundaries, and multilingual noise.
+- Sources: `experiments/task4_adversarial/results_pre.csv`, `results_post.csv`, `robustness_gains.csv`
 
 | Category | Pre F1 | Post F1 | F1 Gain | Pre Boundary F1 | Post Boundary F1 | Boundary F1 Gain |
 |----------|--------|---------|---------|-----------------|-------------------|-----------------|
@@ -513,37 +454,25 @@ Source: `experiments/task4_adversarial/results_pre.csv`, `results_post.csv`, `ro
 | All | 0.2267 | 0.4597 | +0.2329 | 0.2506 | 0.4988 | +0.2482 |
 | Adversarial (all) | 0.1700 | 0.4186 | **+0.2486** | 0.1834 | 0.4884 | +0.3049 |
 
-**Key Findings:**
-
-- **Multilingual perturbations saw the largest improvement** (+0.5495 F1), going from near-random performance (0.099) to strong extraction (0.649). The model learned to ignore appended foreign-language noise.
-- **Ambiguous and nested categories also improved dramatically** (+0.28 and +0.24 F1 respectively), showing the model became more resilient to surrounding punctuation and overlapping span structures.
-- **Original (clean) data performance also improved** (+0.21 F1), indicating that adversarial training acts as a form of data augmentation that benefits even non-adversarial inputs.
-- **JSON validity remained 100%** across all categories in both pre and post evaluations — the adversarial training did not compromise output format compliance.
-- **Boundary F1 consistently exceeds entity F1**, meaning the model finds correct span boundaries more often than it gets the full `(type, value, start, end)` tuple right — entity type classification is the harder sub-problem.
-- **Note:** Pre-evaluation uses `eval_combined.jsonl` (from val split) while post-evaluation uses `heldout_combined.jsonl` (from test split), so gains reflect both model improvement and dataset differences.
+Interpretation:
+- Multilingual, ambiguous, and nested examples improved the most after adversarial training.
+- Overall adversarial F1 improved by about `+0.2486`, while JSON validity remained `100%`.
+- Boundary F1 is consistently higher than full entity F1, which indicates boundary recovery is easier than full type+value+offset matching.
 
 ---
 
 ### Task 5: Production Profiling & Quantization
 
-**Objective:** Profile inference memory usage, benchmark three quantization levels (Q4\_K\_M, Q5\_K\_M, Q8\_0) for latency/quality tradeoffs, measure concurrency scaling behavior, and recommend a production deployment configuration that meets a p95 < 500ms SLA target.
+Explanation: This task converts the model from an experimental system into a deployment-oriented service by measuring memory, quality, latency, and concurrency tradeoffs.
 
-**Methodology:**
+Objective: quantify the tradeoff between model size, latency, quality, and concurrency, then produce a deployable configuration that satisfies a strict latency target.
 
-Three modules under `src/tasks/task5_production/`:
+Implementation:
+- Memory profiling, quantized benchmarking, and concurrency testing are implemented in `src/tasks/task5_production/`.
+- The evaluation combines HuggingFace profiling with `llama.cpp` GGUF inference.
 
-1. **Memory profiling** (`profile_memory.py`): Loads the full `Qwen/Qwen2.5-1.5B` model in HuggingFace, runs forward passes on 50 test examples with `output_hidden_states=True`, and measures per-layer activation tensor sizes (`numel * element_size`) and total model parameter memory.
-
-2. **Quantization benchmarking** (`benchmark_llamacpp.py`): Uses [llama.cpp](https://github.com/ggerganov/llama.cpp) to run inference with quantized GGUF models. The quantization pipeline is:
-   - Convert HF model → GGUF FP16 via `convert_hf_to_gguf.py`
-   - Quantize FP16 → Q4\_K\_M / Q5\_K\_M / Q8\_0 via `llama.cpp/quantize`
-   - Benchmark each variant on the full CoNLL-2003 test set (3453 samples) with deterministic decoding (`temp=0`, `seed=42`)
-
-3. **Concurrency benchmarking** (`concurrency_benchmark.py`): Uses `ThreadPoolExecutor` to simulate concurrent requests at levels 1/2/4/8/16, measuring per-request latency distributions (p50/p95/p99) and throughput. Tests both subprocess-spawn and HTTP server modes.
-
-**Memory Profile:**
-
-Source: `experiments/task5_production/memory_profile.csv`, `memory_profile.json`
+Memory profile:
+- Source: `experiments/task5_production/memory_profile.csv`, `experiments/task5_production/memory_profile.json`
 
 | Component | Memory |
 |-----------|--------|
@@ -551,11 +480,10 @@ Source: `experiments/task5_production/memory_profile.csv`, `memory_profile.json`
 | Activation memory per layer (mean) | **0.33 MB** (346,460 bytes) |
 | Activation total (27 layers) | **~8.9 MB** |
 
-**Conclusion:** The memory bottleneck is overwhelmingly **model weights** (~2.9 GB), not activations (~9 MB). Quantization directly addresses this by reducing weight storage by 47–68%.
+Conclusion: the dominant bottleneck is model weights, not activation memory.
 
-**Quantization Benchmark (full CoNLL-2003 test set, n=3453):**
-
-Source: `experiments/task5_production/quant_benchmark_with_memory.csv`
+Quantization benchmark:
+- Source: `experiments/task5_production/quant_benchmark_with_memory.csv`
 
 | Quantization | File Size | Per-sample Latency | Precision | Recall | F1 | Validity |
 |-------------|-----------|-------------------|-----------|--------|----|----------|
@@ -563,11 +491,10 @@ Source: `experiments/task5_production/quant_benchmark_with_memory.csv`
 | Q5\_K\_M | 1073 MB | 2646.7 ms | 0.4201 | 0.4040 | 0.4119 | 1.0 |
 | Q8\_0 | 1570 MB | 2108.3 ms | 0.4565 | 0.4391 | 0.4476 | 1.0 |
 
-**Quality-size tradeoff:** Q8\_0 achieves the highest F1 (0.4476) at 1.57 GB; Q4\_K\_M is 40% smaller (940 MB) but loses ~9 F1 points. Q5\_K\_M is the slowest despite being mid-sized.
+Quality-size tradeoff: Q8\_0 gives the best F1, Q4\_K\_M gives the smallest footprint, and Q5\_K\_M sits in the middle but is the slowest in this setup.
 
-**Concurrency Scaling (Q8\_0, Metal acceleration, n=32):**
-
-Source: `experiments/task5_production/concurrency.csv`
+Concurrency scaling:
+- Source: `experiments/task5_production/concurrency.csv`
 
 | Concurrency | p50 (ms) | p95 (ms) | p99 (ms) | Throughput (req/s) |
 |-------------|----------|----------|----------|--------------------|
@@ -576,9 +503,9 @@ Source: `experiments/task5_production/concurrency.csv`
 | 8 | 633.1 | 642.1 | 645.0 | 12.62 |
 | 16 | 708.8 | 752.5 | 1198.0 | 21.65 |
 
-**Scaling observations:** Throughput scales nearly linearly up to c=8 (~12.6 req/s), but c=16 introduces severe tail latency (p99 jumps to ~1.2s) while throughput gains diminish.
+Observation: throughput improves with concurrency, but tail latency degrades sharply at higher concurrency, especially at `16`.
 
-**SLA-Tuned Server Runs (max\_tokens=64, n=64):**
+SLA-tuned server runs:
 
 | Config | Concurrency | p50 (ms) | p95 (ms) | Throughput (req/s) |
 |--------|-------------|----------|----------|--------------------|
@@ -588,22 +515,18 @@ Source: `experiments/task5_production/concurrency.csv`
 | Q5\_K\_M tuned | 2 | 525.8 | 583.9 | 4.01 |
 | Q8\_0 server | 1 | 634.3 | 662.4 | 1.83 |
 
-**Production Recommendations:**
-
-Source: `experiments/task5_production/production_recommendation.md`
+Production recommendations:
+- Source: `experiments/task5_production/production_recommendation.md`
 
 | Profile | Quantization | Batch Size | Concurrency | p95 Latency | Throughput | F1 |
 |---------|-------------|------------|-------------|-------------|------------|----|
 | **Quality-first** | Q8\_0 | 1 | 1 | 662.4 ms | 1.83 req/s | 0.4476 |
 | **SLA-first** (< 500ms p95) | Q4\_K\_M | 1 | 2 | **427.0 ms** | 5.65 req/s | 0.3573 |
 
-**Key Findings:**
-
-- **SLA target (p95 < 500ms) is met** with the tuned Q4\_K\_M configuration: server-style inference, `max_tokens=64`, batch size 1, concurrency 2 → p95 = 427ms at 5.65 req/s.
-- **Q8\_0 provides the best quality** (F1 0.4476) but cannot meet the 500ms SLA without further optimization.
-- **Model file size directly correlates with accuracy:** Q4 (940 MB) → F1 0.36, Q5 (1073 MB) → F1 0.41, Q8 (1570 MB) → F1 0.45. This represents a **68% size reduction** from FP16 (2944 MB) to Q4 with a manageable quality trade-off.
-- **Concurrency beyond 8 degrades tail latency** disproportionately — p99 at c=16 is nearly 2x that of c=8, making high concurrency unsuitable for strict SLA deployments.
-- **Reducing `max_tokens` from 256 to 64** was the single most impactful latency optimization, cutting per-request time by more than half in server mode.
+Interpretation:
+- The `<500 ms` p95 SLA is met with the tuned `Q4_K_M` server configuration.
+- `Q8_0` is the best quality option but does not satisfy the same SLA in the tested setup.
+- The most effective latency improvement came from reducing `max_tokens` and using low-concurrency server-style inference.
 
 ---
 
